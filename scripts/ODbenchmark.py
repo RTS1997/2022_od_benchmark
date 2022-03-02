@@ -89,6 +89,7 @@ if __name__ == "__main__":
     # Create an array for each OD measurement
     voltage_array = np.zeros(args.od_measurements, dtype=float)
     bit_array = np.zeros(args.od_measurements, dtype=float)
+    od_array = np.zeros(args.od_measurements, dtype=float)
 
     phototransistor = input("Enter phototransistor name or id (If you want to abort type: n):")
 
@@ -101,12 +102,11 @@ if __name__ == "__main__":
                 solution_od = input("Add solution to reaction vessle and enter OD here(If you want to abort type: n):")
                 if solution_od != "n" and isinstance(solution_od, str) ==True:
                     print("Solution is measured now!")
-                    # voltage_array[number] = adc0.read_voltage(1)
-                    # bit_array[number] = adc0.read_raw(1)
-                    voltage_array[number] = 3
-                    bit_array[number] = 4
+                    voltage_array[number] = adc0.read_voltage(args.ADCchannel)
+                    bit_array[number] = adc0.read_raw(args.ADCchannel)
+                    od_array[number] = int(solution_od)
                     time.sleep(0.2)
-                    print(voltage_array, bit_array)
+                    print(voltage_array, bit_array, od_array)
                 else:
                     print("Experiment done or aborted, files are stored in 3")
             print("Experiment done!")
