@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, \
+                                                    unicode_literals
 from ast import arg, parse
 from email import parser
 import pandas as pd
@@ -9,9 +11,7 @@ import pathlib
 import time
 import os
 
-from __future__ import absolute_import, division, print_function, \
-                                                    unicode_literals
-from ADCPi import read_raw
+from ADCPi import ADCPi
 
 # import the ADCPi module
 # try:
@@ -101,12 +101,15 @@ if __name__ == "__main__":
                 solution_od = input("Add solution to reaction vessle and enter OD here(If you want to abort type: n):")
                 if solution_od != "n" and isinstance(solution_od, str) ==True:
                     print("Solution is measured now!")
-                    voltage_array[solution_od] = adc0.read.voltage(args.ADCchannel)
-                    bit_array[solution_od] = read_raw(adc0)
+                    # voltage_array[number] = adc0.read_voltage(1)
+                    # bit_array[number] = adc0.read_raw(1)
+                    voltage_array[number] = 3
+                    bit_array[number] = 4
                     time.sleep(0.2)
                     print(voltage_array, bit_array)
                 else:
                     print("Experiment done or aborted, files are stored in 3")
+            print("Experiment done!")
         else:
             print("Experiment done or aborted, files are stored in 2")
     else:
