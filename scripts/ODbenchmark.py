@@ -1,40 +1,25 @@
 from __future__ import absolute_import, division, print_function, \
                                                     unicode_literals
-from ast import arg, parse
-from cProfile import label
-from email import parser
-from heapq import merge
-from re import X
+import argparse
+import time
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import argparse
-import pathlib
-import time
-import os
-import csv
+
+from email import parser
+
+from re import X
 
 from ADCPi import ADCPi
 
-# import the ADCPi module
-# try:
-#     from ADCPi import ADCPi
-# except ImportError:
-#     print("Failed to import ADCPi from python system path")
-#     print("Importing from parent folder instead")
-#     try:
-#         import sys
-#         sys.path.append('..')
-#         from ADCPi import ADCPi
-#     except ImportError:
-#         raise ImportError(
-#             "Failed to import library from parent folder")
-
-
-# Create function that either shows plots or not
-
 def plot_show(show_plot):
+    """Function shows or closes plots
+
+        Args:
+            String 'show_plot'.
+    """
     if show_plot:
         plt.show()
     else:
@@ -42,10 +27,8 @@ def plot_show(show_plot):
 
 # Protects user from jubling up anything during imports
 if __name__ == "__main__":
-    print("yap")
 
     # Create all parameters that can be parsed by the command line.
-
     parser = argparse.ArgumentParser(
         description="OD measurement analysis"
     )
@@ -96,13 +79,16 @@ if __name__ == "__main__":
         """Writes results to a csv file.
 
         Args:
-            result_list: list of all results.
-            header: string name as header for the list.
+            bit_array: directory of all bit value results.
+            od_array: directory of OD values.
+            voltage_array: directory of all recorded voltages.
 
         Returns:
-            list of all results to the --dest folder.
+            csv file in the dist directory in the form of a pandas data frame.
 
         """
+
+        # The ** unpacks the dictionaries and this makes it possible to combine them into one.
         pd.DataFrame({**od_array, **bit_array, **voltage_array}).to_csv(args.dest+"/od_benchmark.csv")
 
 
@@ -110,11 +96,12 @@ if __name__ == "__main__":
     def plot_results(od_label, dictkey, y_lab, x_lab="OD600"):
         """Plots all results as a line plot for voltage and bit values.
 
-            Plots are saved in the --dest folder.
+            Plots are saved in the --dest folder csv after the measurements are done.
+            The od label and dictkey are used to find the correct columns within the csv file.
 
             Args:
-                result_list: list of all results.
-                header: string name as header for the list.
+                od_label: dictionary of all od values used during the run.
+                dictkey: dictionary of all used values either bit or voltage.
 
             Returns:
                 plot1: lineplot for all voltage results
@@ -137,10 +124,11 @@ if __name__ == "__main__":
         plt.ylabel(y_lab)
         plt.title("Calibration plot")
         plt.legend()
+        plt.savefig(args.dest+"/"+y_lab+".svg")
 
     ### Experiment program
 
-    experiment_switch = "Yes"
+    experiment_switch = "YES"
 
     # set arrays
 
@@ -148,13 +136,12 @@ if __name__ == "__main__":
     bit_array = {}
     od_array = {}
 
-    while experiment_switch == "Yes":
+    while experiment_switch.upper() == "YES":
 
         phototransistor = input("Enter phototransistor name or id (If you want to abort type: n):")
 
-
         if phototransistor != "n" and isinstance(phototransistor, str) == True:
-            print("Well done")
+            print("PHOTOTRANSISTOR ENTERED.")
             diode = input("Enter diode name or id (If you want to abort type: n):")
             if diode != "n" and isinstance(diode, str) == True:
 
@@ -163,33 +150,39 @@ if __name__ == "__main__":
                 bit_array[phototransistor+diode+"_bit_array"] = np.zeros(args.od_measurements, dtype=float)
                 od_array["OD"+str(phototransistor)+str(diode)] = np.zeros(args.od_measurements, dtype=float)
 
-                print("Well done 2", voltage_array)
+                print("DIODE ENTERED.")
                 for number in range(0, args.od_measurements):
                     solution_od = input("Add solution to reaction vessle and enter OD here(If you want to abort type: n):")
                     if solution_od != "n" and isinstance(solution_od, str) == True:
-                        print("Solution is measured now!")
+                        print("SOLUTION IS BEING MEASURED NOW!")
                         voltage_array[phototransistor+diode+"_voltage_array"][number] = adc0.read_voltage(args.ADCchannel)
                         bit_array[phototransistor+diode+"_bit_array"][number] += adc0.read_raw(args.ADCchannel)
                         od_array["OD"+str(phototransistor)+str(diode)][number] = float(solution_od)
                         time.sleep(0.2)
                         print(voltage_array, bit_array, od_array)
                     else:
-                        print("Experiment done or aborted, files are stored in 3")
+                        print(f"Experiment done or aborted, files are stored in {args.dest}")
 
                 experiment_switch = input("Do you want to continue the experiment? (Yes/No):")
+
+                if experiment_switch.upper() != "NO" and experiment_switch.upper() != "YES":
+                    print("Invalid answer was given!")
+                    experiment_switch = input("Do you still want to continue the experiment? If answer is not Yes, experiment will abort! (Yes/No):")
+                else:
+                    continue
             else:
-                print("Experiment done or aborted, files are stored in 2")
+                print(f"Experiment done or aborted, files are stored in {args.dest}")
         else:
-            print("Experiment done or aborted, files are stored in ")
+            print(f"Experiment done or aborted, files are stored in {args.dest}")
 
 
     # Write the results to a file in the destination folder
-    if experiment_switch == "No":
+    if experiment_switch.upper() == "NO":
         write_results(bit_array, od_array, voltage_array)
 
 
     # Load and show plots
-    if args.display == True and experiment_switch == "No":
+    if args.display == True and experiment_switch.upper() == "NO":
         plot_results(od_array,voltage_array, "Voltage in [mV]")
         plot_show('show_plot')
         plot_results(od_array,bit_array, "bits measured")
