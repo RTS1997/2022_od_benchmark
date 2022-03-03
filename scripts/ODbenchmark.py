@@ -1,8 +1,10 @@
 from __future__ import absolute_import, division, print_function, \
                                                     unicode_literals
 from ast import arg, parse
+from cProfile import label
 from email import parser
 from heapq import merge
+from re import X
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -105,7 +107,7 @@ if __name__ == "__main__":
 
 
     # Function that plots data from results
-    def plot_results(od_label, dictkey):
+    def plot_results(od_label, dictkey, y_lab, x_lab="OD600"):
         """Plots all results as a line plot for voltage and bit values.
 
             Plots are saved in the --dest folder.
@@ -129,63 +131,66 @@ if __name__ == "__main__":
         #print("od", od_array.keys(), "dc", dictkey.keys(), len(dictkey.keys()))
         # First plot
         for index in range(0, len(od_label.keys())):
-            sns.lineplot(data = data_csv, x = list(od_label.keys())[index], y = list(dictkey.keys())[index])
+            sns.lineplot(data = data_csv, x = list(od_label.keys())[index], y = list(dictkey.keys())[index], label = list(dictkey.keys())[index])
 
-        # data_formatter_dict = merge(results_list , {"od_values":od_values})
-        # print("df",data_formatter_dict)
+        plt.xlabel(x_lab)
+        plt.ylabel(y_lab)
+        plt.title("Calibration plot")
+        plt.legend()
 
-        # final_data_frame = pd.DataFrame.from_dict(data_formatter_dict)
-        # print("final",final_data_frame)
+    ### Experiment program
 
-        # for entry in
+    experiment_switch = "Yes"
 
-        # sns.set_theme()
-        # sns.lineplot(data = final_data_frame, x = 'od_values', y = od_values.ke)
+    # set arrays
+
+    voltage_array = {}
+    bit_array = {}
+    od_array = {}
+
+    while experiment_switch == "Yes":
+
+        phototransistor = input("Enter phototransistor name or id (If you want to abort type: n):")
 
 
-    phototransistor = input("Enter phototransistor name or id (If you want to abort type: n):")
+        if phototransistor != "n" and isinstance(phototransistor, str) == True:
+            print("Well done")
+            diode = input("Enter diode name or id (If you want to abort type: n):")
+            if diode != "n" and isinstance(diode, str) == True:
 
+                # Create an array for each OD measurement
+                voltage_array[phototransistor+diode+"_voltage_array"] = np.zeros(args.od_measurements, dtype=float)
+                bit_array[phototransistor+diode+"_bit_array"] = np.zeros(args.od_measurements, dtype=float)
+                od_array["OD"+str(phototransistor)+str(diode)] = np.zeros(args.od_measurements, dtype=float)
 
-    if phototransistor != "n" and isinstance(phototransistor, str) == True:
-        print("Well done")
-        diode = input("Enter diode name or id (If you want to abort type: n):")
-        if diode != "n" and isinstance(diode, str) == True:
+                print("Well done 2", voltage_array)
+                for number in range(0, args.od_measurements):
+                    solution_od = input("Add solution to reaction vessle and enter OD here(If you want to abort type: n):")
+                    if solution_od != "n" and isinstance(solution_od, str) == True:
+                        print("Solution is measured now!")
+                        voltage_array[phototransistor+diode+"_voltage_array"][number] = adc0.read_voltage(args.ADCchannel)
+                        bit_array[phototransistor+diode+"_bit_array"][number] += adc0.read_raw(args.ADCchannel)
+                        od_array["OD"+str(phototransistor)+str(diode)][number] = float(solution_od)
+                        time.sleep(0.2)
+                        print(voltage_array, bit_array, od_array)
+                    else:
+                        print("Experiment done or aborted, files are stored in 3")
 
-            # Create an array for each OD measurement
-            voltage_array = {phototransistor+diode+"_voltage_array":np.zeros(args.od_measurements, dtype=float)}
-            bit_array = {phototransistor+diode+"_bit_array":np.zeros(args.od_measurements, dtype=float)}
-            od_array = {"OD"+str(phototransistor)+str(diode): np.zeros(args.od_measurements, dtype=float)}
-
-            print("Well done 2")
-            for number in range(0, args.od_measurements):
-                solution_od = input("Add solution to reaction vessle and enter OD here(If you want to abort type: n):")
-                if solution_od != "n" and isinstance(solution_od, str) == True:
-                    print("Solution is measured now!")
-                    voltage_array[phototransistor+diode+"_voltage_array"][number] = adc0.read_voltage(args.ADCchannel)
-                    bit_array[phototransistor+diode+"_bit_array"][number] += adc0.read_raw(args.ADCchannel)
-                    od_array["OD"+str(phototransistor)+str(diode)][number] = float(solution_od)
-                    time.sleep(0.2)
-                    print(voltage_array, bit_array, od_array)
-                else:
-                    print("Experiment done or aborted, files are stored in 3")
-            print("Experiment done!")
+                experiment_switch = input("Do you want to continue the experiment? (Yes/No):")
+            else:
+                print("Experiment done or aborted, files are stored in 2")
         else:
-            print("Experiment done or aborted, files are stored in 2")
-    else:
-        print("Experiment done or aborted, files are stored in ")
+            print("Experiment done or aborted, files are stored in ")
 
 
     # Write the results to a file in the destination folder
-    write_results(bit_array, od_array, voltage_array)
+    if experiment_switch == "No":
+        write_results(bit_array, od_array, voltage_array)
 
 
     # Load and show plots
-    if args.display == True:
-        plot_results(od_array,voltage_array)
+    if args.display == True and experiment_switch == "No":
+        plot_results(od_array,voltage_array, "Voltage in [mV]")
         plot_show('show_plot')
-        plot_results(od_array,bit_array)
+        plot_results(od_array,bit_array, "bits measured")
         plot_show('show_plot')
-        # plot_results(bit_array, od_array)
-        # plot_show('show_plot')
-        # plot_results(voltage_array, od_array)
-        # plot_show('show_plot')
