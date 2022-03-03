@@ -10,6 +10,7 @@ import argparse
 import pathlib
 import time
 import os
+import csv
 
 from ADCPi import ADCPi
 
@@ -63,6 +64,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dest",
         type=str,
+        required=True,
         help="destination of graphs"
     )
     parser.add_argument(
@@ -85,6 +87,14 @@ if __name__ == "__main__":
     # adc1 = ADCPi(0x6A, 0x6B, 12)
     # adc2 = ADCPi(0x6C, 0x6D, 12)
     # adc3 = ADCPi(0x6E, 0x6F, 12)
+
+    # Function that writes a file from a list and string name
+    def write_results(result_list, header):
+        with open(args.dest+"/od_benchmark_results.csv", "a") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([header])
+            writer.writerow(result_list)
+
 
     # Create an array for each OD measurement
     voltage_array = np.zeros(args.od_measurements, dtype=float)
@@ -116,6 +126,8 @@ if __name__ == "__main__":
         print("Experiment done or aborted, files are stored in ")
 
 
-
+    # Write the results to a file in the destination folder
+    write_results(bit_array, 'bit array')
+    write_results(voltage_array, 'voltage array')
 
 
